@@ -1,6 +1,8 @@
 package me.checkers;
 
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -21,6 +24,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public TextView[][] DisplayBoard = new TextView[8][8];
     public TextView[][] DisplayBoardBackground = new TextView[8][8];
     public int numberOfMoves;
+    public Piece lastSelectedPiece;
+
 
     ArrayList<Piece> redPieces;
     ArrayList<Piece> whitePieces;
@@ -33,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         redPieces = new ArrayList<>();
         whitePieces = new ArrayList<>();
         initialiseBoard();
+        lastSelectedPiece = null;
     }
 
     private void initialiseBoard(){
@@ -104,10 +110,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (Board[x][y].getPiece() != null) {
                     if (piece.isRed()) {
                         DisplayBoard[x][y].setBackgroundResource(R.drawable.rpawn);
-                        Log.d("whitepawn", "Check");
                     } else {
                         DisplayBoard[x][y].setBackgroundResource(R.drawable.wpawn);
-                        Log.d("blackpawn", "Check");
                     }
                 } else{
                     DisplayBoard[x][y].setBackgroundResource(0);
@@ -137,23 +141,95 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-        if(!selected){
-            if(Board[clickedPosition.getX()][clickedPosition.getY()].getPiece() != null){
+        Piece selectedPiece = Board[clickedPosition.getX()][clickedPosition.getY()].getPiece();
 
+        if(!selected){
+            if(selectedPiece != null){
+                allowedMoves(selectedPiece, clickedPosition.getX(), clickedPosition.getY());
+                lastSelectedPiece = selectedPiece;
+                lastPos = new Coordinates(clickedPosition.getX(), clickedPosition.getY());
+                selected = true;
             }
+        }
+        else {
+            Log.d("selection", "true");
+            if(selectedPiece != null){
+                clearAllowedMoves();
+                selected = false;
+            }
+            else{
+                int x = clickedPosition.getX();
+                int y = clickedPosition.getY();
+                int color = Color.RED;
+                ColorDrawable background = (ColorDrawable) DisplayBoardBackground[x][y].getBackground();
+                Log.d("colorCheck", Boolean.toString(background.getColor() == color));
+                if(background.getColor() == color) {
+                    int lx = lastPos.getX();
+                    int ly = lastPos.getY();
+                    Board[x][y].setPiece(lastSelectedPiece);
+                    Board[lx][ly].setPiece(null);
+                    redPieces.add(lastSelectedPiece);
+                    clearAllowedMoves();
+                    setBoard();
+                    selected = false;
+                }
+            }
+
         }
 
         //setBoard();
     }
 
     public void allowedMoves(Piece piece, int px, int py){
-        if(!piece.isKing()){
-            try{
-                DisplayBoardBackground[px+1][py+1].setBackgroundResource(R.color.colorBoardSelected);
-            } catch(IndexOutOfBoundsException ignored){}
-            try{
-                DisplayBoardBackground[px-1][py-1].setBackgroundResource(R.color.colorBoardSelected);
-            } catch(IndexOutOfBoundsException ignored){}
+        if(!piece.isKing() && piece.isRed()){
+            try {
+                if (Board[px + 1][py - 1].getPiece() == null) {
+                    DisplayBoardBackground[px + 1][py - 1].setBackgroundResource(R.color.colorBoardSelected);
+                }
+            }
+            catch (IndexOutOfBoundsException ignored) {
+            }
+            try {
+                if (Board[px - 1][py - 1].getPiece() == null) {
+                    DisplayBoardBackground[px - 1][py - 1].setBackgroundResource(R.color.colorBoardSelected);
+                }
+            }
+            catch (IndexOutOfBoundsException ignored) {}
+        }
+        if(!piece.isKing() && !piece.isRed()){
+            try {
+                if (Board[px + 1][py + 1].getPiece() == null) {
+                    DisplayBoardBackground[px + 1][py + 1].setBackgroundResource(R.color.colorBoardSelected);
+                }
+            }
+            catch (IndexOutOfBoundsException ignored) {
+            }
+            try {
+                if (Board[px - 1][py + 1].getPiece() == null) {
+                    DisplayBoardBackground[px - 1][py + 1].setBackgroundResource(R.color.colorBoardSelected);
+                }
+            }
+            catch (IndexOutOfBoundsException ignored) {}
+        }
+    }
+
+    public List<Coordinates> canCapture(Piece piece, int px, int py){
+        if(piece.isRed()) {
+            if(Board[px-1][py-1].getPiece() != null && !Board[px+1][py-1].getPiece().isRed()){
+
+            }
+        }
+
+        return new ArrayList<Coordinates>() {};
+    }
+
+    public void clearAllowedMoves(){
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                if((x+y)%2==0)
+                    DisplayBoardBackground[x][y].setBackgroundResource(R.color.colorBoardBuff);
+                else DisplayBoardBackground[x][y].setBackgroundResource(R.color.colorBoardGreen);
+            }
         }
     }
 }
